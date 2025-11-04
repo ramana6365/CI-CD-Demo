@@ -47,3 +47,12 @@ pipeline {
         }
     }
 }
+stage('Rollback') {
+    steps {
+        echo "Rolling back to previous stable version..."
+        sh '''
+        ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/mykey.pem ubuntu@3.27.181.246 '
+        cd /home/ubuntu/app && git reset --hard HEAD~1 && sudo systemctl restart <your-app-service>'
+        '''
+    }
+}

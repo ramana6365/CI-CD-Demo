@@ -1,43 +1,49 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DEPLOY_DIR = "/opt/sample-app"
-    DEPLOY_LOG = "/tmp/deploy.log"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    environment {
+        EC2_IP = "13.55.24.135"   // Replace with your EC2 public IP
     }
 
-    stage('Build') {
-      steps {
-        sh '''
-          echo "Installing Node.js if not installed..."
-          if ! command -v node >/dev/null 2>&1; then
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-          echo "Node.js version:"
-          node -v
-        '''
-      }
-    }
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building Node.js app...'
+                sh 'npm install'
+            }
+        }
 
-    stage('Deploy') {
-      steps {
-        sh '''
-          echo "Deploying application..." | tee ${DEPLOY_LOG}
-          sudo mkdir -p ${DEPLOY_DIR}
-          sudo cp -r * ${DEPLOY_DIR}/
-          cd ${DEPLOY_DIR}
-          nohup npm start > app.log 2>&1 &
-          echo "Application started on port 3000"
-        '''
-      }
+        stage('Test') {
+            steps {
+                echo 'Running basic tests...'
+                sh 'node -v'
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-key']) {
+                    sh """
+                    echo "Deploying Node app to EC2..."
+                    ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
+                        sudo apt update -y &&
+                        sudo apt install -y nodejs npm &&
+                        sudo mkdir -p /home/ubuntu/nodeapp &&
+                        cd /home/ubuntu/nodeapp &&
+                        sudo rm -rf * &&
+                        exit
+                    '
+
+                    scp -o StrictHostKeyChecking=no -r * ubuntu@${EC2_IP}:/home/ubuntu/nodeapp/
+
+                    ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
+                        cd /home/ubuntu/nodeapp &&
+                        npm install &&
+                        nohup node app.js > output.log 2>&1 &
+                    '
+                    """
+                }
+            }
+        }
     }
-  }
 }

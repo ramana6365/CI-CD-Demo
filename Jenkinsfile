@@ -22,7 +22,7 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['ec2-key']) {
+                sshagent(['my-ec2-key']) {
                     sh """
                     echo "Deploying Node app to EC2..."
                     ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '

@@ -15,7 +15,15 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'echo "Building the application..."'
+        sh '''
+          echo "Installing Node.js if not installed..."
+          if ! command -v node >/dev/null 2>&1; then
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
+          echo "Node.js version:"
+          node -v
+        '''
       }
     }
 
@@ -23,8 +31,11 @@ pipeline {
       steps {
         sh '''
           echo "Deploying application..." | tee ${DEPLOY_LOG}
-          rsync -av --delete --exclude .git ./ ${DEPLOY_DIR}
-          sudo systemctl restart sample-app || true
+          sudo mkdir -p ${DEPLOY_DIR}
+          sudo cp -r * ${DEPLOY_DIR}/
+          cd ${DEPLOY_DIR}
+          nohup npm start > app.log 2>&1 &
+          echo "Application started on port 3000"
         '''
       }
     }

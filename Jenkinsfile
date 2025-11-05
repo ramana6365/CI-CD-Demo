@@ -34,56 +34,70 @@ pipeline {
       }
     }
 
-    stage('AI Release Notes') {
-      environment {
-        OPENAI_API_KEY = credentials('OPENAI_API_KEY')
-      }
-      steps {
-        sshagent(['github-deploy-key']) {
-          sh '''
-            set -e
-            echo "Generating AI-powered release notes..."
 
-            git log -3 --pretty=format:"%h - %s (%an)" > commits.txt
-            COMMITS=$(cat commits.txt | jq -Rs .)
+  stage('AI Release Notes') {
+  environment {
+    OPENAI_KEY = credentials('OPENAI_API_KEY')
+  }
+  steps {
+    sshagent(['github-deploy-key']) {
+      sh '''
+        set -e
+        echo "Generating AI-powered release notes..."
 
-            cat > payload.json <<EOF
-{
-  "model": "gpt-4o-mini",
-  "messages": [
-    {"role": "system", "content": "You are a professional release note writer."},
-    {"role": "user", "content": "Write concise, human-readable release notes for these commits: ${COMMITS}"}
-  ]
-}
-EOF
+        # Collect latest 3 commits
+        git log -3 --pretty=format:"%h - %s (%an)" > commits.txt
+        COMMITS=$(cat commits.txt | jq -Rs .)
 
-            echo "Calling OpenAI API..."
-            API_RESPONSE=$(curl -s https://api.openai.com/v1/chat/completions \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $OPENAI_API_KEY" \
-              -d @payload.json)
+        # Build payload for OpenAI API
+        jq -n --arg commits "$COMMITS" '{
+          model: "gpt-4o-mini",
+          messages: [
+            {role: "system", content: "You are a professional release note writer."},
+            {role: "user", content: "Write concise, human-readable release notes for these commits: " + $commits}
+          ]
+        }' > payload.json
 
-            echo "$API_RESPONSE" | jq . > api_raw.json
-            AI_NOTES=$(echo "$API_RESPONSE" | jq -r '.choices[0].message.content // .error.message')
+        echo "Calling OpenAI API..."
+        curl -s https://api.openai.com/v1/chat/completions \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $OPENAI_KEY" \
+          -d @payload.json > api_raw.json
 
-            echo "## AI Release Notes - $(date)" > release_notes.md
-            echo "$AI_NOTES" >> release_notes.md
-            cat release_notes.md
+        # Pretty print JSON for reference
+        jq . api_raw.json > api_raw_pretty.json || true
 
-            git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-            git config user.email "ramana@ci.local"
-            git config user.name "Jenkins CI"
+        # Extract clean content from JSON
+        AI_NOTES=$(jq -r '.choices[0].message.content // .error.message' api_raw.json)
 
-            git fetch origin main
-            git checkout main || git checkout -b main origin/main
-            git add release_notes.md
-            git commit -m "docs: add AI-generated release notes [ci skip]" || true
-            git pull origin main --rebase || git stash && git pull origin main --rebase && git stash pop || true
-            git push origin main
-          '''
-        }
-      }
+        # Write markdown release notes
+        echo "## AI Release Notes - $(date)" > release_notes.md
+        echo "$AI_NOTES" >> release_notes.md
+        cat release_notes.md
+
+        # Configure Git
+        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+        git config user.email "ramana@ci.local"
+        git config user.name "Jenkins CI"
+
+        # Always work on main branch
+        git fetch origin main
+        git checkout main
+        git pull origin main --rebase
+
+        # Add both files (release_notes.md + raw JSON)
+        git add release_notes.md api_raw.json api_raw_pretty.json
+        git commit -m "docs: add AI-generated release notes + raw response [ci skip]" || true
+
+        git push origin main
+      '''
     }
+  }
+}
+
+
+
+    
 
     stage('Rollback') {
       steps {

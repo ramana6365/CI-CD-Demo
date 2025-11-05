@@ -23,13 +23,13 @@ pipeline {
       steps {
         echo "Deploying to EC2 (${EC2_IP})..."
         sshagent(['my-ec2-key']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
-              cd /home/ubuntu/CI-CD-Demo &&
+          sh """
+            ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "
+              cd ${APP_PATH} &&
               git pull origin main &&
-              sudo systemctl restart sample-app.service
+              sudo systemctl restart ${SERVICE_NAME}
             "
-          '''
+          """
         }
       }
     }
@@ -63,13 +63,13 @@ pipeline {
       steps {
         echo "Rolling back to previous stable version..."
         sshagent(['my-ec2-key']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
-              cd /home/ubuntu/CI-CD-Demo &&
+          sh """
+            ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "
+              cd ${APP_PATH} &&
               git reset --hard HEAD~1 &&
-              sudo systemctl restart sample-app.service
+              sudo systemctl restart ${SERVICE_NAME}
             "
-          '''
+          """
         }
         echo "Rollback completed successfully."
       }

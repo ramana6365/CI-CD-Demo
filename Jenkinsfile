@@ -87,32 +87,27 @@ stage('Rollback Suggestion') {
     script {
       echo "Build failed or unstable — generating rollback suggestion..."
 
-      // Get last successful build info
       def lastGoodBuild = currentBuild.rawBuild.getPreviousSuccessfulBuild()
       if (lastGoodBuild) {
-        def rollbackCommit = sh(returnStdout: true, script: "git rev-parse ${lastGoodBuild.displayName} || true").trim()
         echo "Last successful build: #${lastGoodBuild.number}"
-        echo "Rollback candidate commit: ${rollbackCommit}"
 
-        // Write rollback suggestion to file
-        sh """
+        sh '''
+          set -e
+          LAST_GOOD_COMMIT=$(git rev-parse HEAD~1 || true)
           echo "## Rollback Suggestion - $(date)" > rollback_suggestion.md
-          echo "The current build (${env.BUILD_NUMBER}) failed or is unstable." >> rollback_suggestion.md
+          echo "The current build ($BUILD_NUMBER) failed or is unstable." >> rollback_suggestion.md
           echo "Suggested rollback target: Build #${lastGoodBuild.number}" >> rollback_suggestion.md
-          echo "Commit ID: ${rollbackCommit}" >> rollback_suggestion.md
+          echo "Commit ID: $LAST_GOOD_COMMIT" >> rollback_suggestion.md
           echo "" >> rollback_suggestion.md
           echo "To rollback, run:" >> rollback_suggestion.md
-          echo "\\n  git checkout ${rollbackCommit}" >> rollback_suggestion.md
+          echo "\\n  git checkout $LAST_GOOD_COMMIT" >> rollback_suggestion.md
           echo "\\n  git push origin main --force" >> rollback_suggestion.md
-        """
+          cat rollback_suggestion.md
 
-        // Display and commit rollback suggestion
-        sh "cat rollback_suggestion.md"
-
-        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-        sh '''
+          git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
           git config user.email "ramana@ci.local"
           git config user.name "Jenkins CI"
+
           git add rollback_suggestion.md
           git commit -m "docs: add rollback suggestion for failed build [ci skip]" || true
           git push origin main || true
@@ -123,6 +118,7 @@ stage('Rollback Suggestion') {
     }
   }
 }
+
 
 
   post {

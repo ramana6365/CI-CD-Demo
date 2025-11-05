@@ -1,0 +1,36 @@
+{
+  "id": "chatcmpl-CYdMhxiVXebSKKJj8NwMKspQg1eAh",
+  "object": "chat.completion",
+  "created": 1762370507,
+  "model": "gpt-4o-mini-2024-07-18",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "### Release Notes\n\n**Updates:**\n\n- **AI-Generated Release Notes**: Implemented functionality to generate release notes automatically based on commit messages. This feature has been integrated and pushed back to the repository.  \n  - Commit: `d2ee7ba`\n  \n- **Enhanced AI Release Note Generation**: Improvements made to the AI generation process to provide clearer and more concise release notes. Changes pushed to the repository.  \n  - Commit: `725715f`\n  \n- **Additional Enhancements**: Further refinements to the AI-driven release notes generation feature, ensuring better alignment with commit content and formatting. Changes pushed to the repository.  \n  - Commit: `0e6d3aa`\n\nFeel free to explore these new features to streamline the release process!",
+        "refusal": null,
+        "annotations": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 112,
+    "completion_tokens": 157,
+    "total_tokens": 269,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "service_tier": "default",
+  "system_fingerprint": "fp_560af6e559"
+}

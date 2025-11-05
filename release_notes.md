@@ -1,2 +1,15 @@
-## AI Release Notes - Wed Nov  5 23:39:04 IST 2025
-We could not parse the JSON body of your request. (HINT: This likely means you aren't using your HTTP library correctly. The OpenAI API expects a JSON payload, but what was sent was not valid JSON. If you have trouble figuring out how to fix this, please contact us through our help center at help.openai.com.)
+## AI Release Notes - Thu Nov  6 00:51:49 IST 2025
+### Release Notes
+
+**Updates:**
+
+- **AI-Generated Release Notes**: Implemented functionality to generate release notes automatically based on commit messages. This feature has been integrated and pushed back to the repository.  
+  - Commit: `d2ee7ba`
+  
+- **Enhanced AI Release Note Generation**: Improvements made to the AI generation process to provide clearer and more concise release notes. Changes pushed to the repository.  
+  - Commit: `725715f`
+  
+- **Additional Enhancements**: Further refinements to the AI-driven release notes generation feature, ensuring better alignment with commit content and formatting. Changes pushed to the repository.  
+  - Commit: `0e6d3aa`
+
+Feel free to explore these new features to streamline the release process!

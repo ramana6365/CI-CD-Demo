@@ -36,16 +36,46 @@ pipeline {
 
        stage('AI Release Notes') {
     steps {
-        echo "Generating AI-based release notes..."
+        echo "Generating AI release notes..."
+
         sh '''
+        # Generate release notes file
         echo "Release Notes - $(date)" > release_notes.txt
         echo "Changes deployed from latest Git commit:" >> release_notes.txt
         git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
         echo "AI Release Notes generated." >> release_notes.txt
         cat release_notes.txt
+
+        # Ensure Git safe directory
+        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+
+        # Detect branch and switch if detached
+        branch=$(git rev-parse --abbrev-ref HEAD || echo "main")
+        if [ "$branch" = "HEAD" ]; then
+          echo "Switching from detached HEAD to main..."
+          git checkout main || git checkout -b main origin/main
+        fi
+
+        # Configure user info
+        git config user.email "ramana@ci.local"
+        git config user.name "Jenkins CI"
+
+        # Use GitHub token for authentication
+        git remote set-url origin https://<YOUR_TOKEN>@github.com/ramana6365/CI-CD-Demo.git
+
+        # Commit and push changes if new content exists
+        git add release_notes.txt
+        if ! git diff --cached --quiet; then
+          git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+          git pull origin main --rebase
+          git push origin main
+        else
+          echo "No new release notes to commit."
+        fi
         '''
     }
 }
+
 
 
         stage('Rollback') {

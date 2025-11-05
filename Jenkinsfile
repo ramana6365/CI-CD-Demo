@@ -34,44 +34,19 @@ pipeline {
             }
         }
 
-        stage('AI Release Notes') {
-            steps {
-                echo "Generating AI release notes..."
+       stage('AI Release Notes') {
+    steps {
+        echo "Generating AI-based release notes..."
+        sh '''
+        echo "Release Notes - $(date)" > release_notes.txt
+        echo "Changes deployed from latest Git commit:" >> release_notes.txt
+        git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
+        echo "AI Release Notes generated." >> release_notes.txt
+        cat release_notes.txt
+        '''
+    }
+}
 
-                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-                    sh '''
-                    echo "Release Notes - $(date)" > release_notes.txt
-                    echo "Changes deployed from latest Git commit:" >> release_notes.txt
-                    git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-                    echo "AI Release Notes generated." >> release_notes.txt
-                    cat release_notes.txt
-
-                    # Identify current branch (use main as fallback)
-                    branch=$(git rev-parse --abbrev-ref HEAD || echo "main")
-
-                    # If detached, switch to main
-                    if [ "$branch" = "HEAD" ]; then
-                      echo "Switching from detached HEAD to main branch..."
-                      git checkout main || git checkout -b main origin/main
-                    fi
-
-                    git config --global user.email "ramana@ci.local"
-                    git config --global user.name "Jenkins CI"
-
-                    # Use token for HTTPS authentication
-                    git remote set-url origin https://${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
-
-                    git add release_notes.txt
-                    if ! git diff --cached --quiet; then
-                      git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-                      git push origin main
-                    else
-                      echo "No changes detected in release notes."
-                    fi
-                    '''
-                }
-            }
-        }
 
         stage('Rollback') {
             steps {

@@ -1,19 +1,17 @@
 pipeline {
     agent any
 
-
     environment {
-        EC2_IP       = "3.26.97.57"
-        APP_PATH     = "/home/ubuntu/CI-CD-Demo"
+        EC2_IP = "3.26.97.57"
+        APP_PATH = "/home/ubuntu/CI-CD-Demo"
         SERVICE_NAME = "sample-app.service"
     }
 
     stages {
-
         stage('Build') {
             steps {
-                sh '''
                 echo "Building the Node.js app..."
+                sh '''
                 npm install
                 echo "Build completed successfully."
                 '''
@@ -22,9 +20,9 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['my-ec2-key']) {            // <-- EC2 key
+                echo "Deploying to EC2 (${EC2_IP})..."
+                sshagent (credentials: ['my-ec2-key']) {
                     sh '''
-                    echo "Deploying to EC2..."
                     ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 "
                         cd /home/ubuntu/CI-CD-Demo &&
                         git pull origin main &&
@@ -35,56 +33,68 @@ pipeline {
             }
         }
 
-        stage('AI Release Notes') {
-            steps {
-                sshagent(['github-ssh-key']) {        // <-- again, GitHub key
-                    sh '''
-                    set -e
-                    mkdir -p ~/.ssh
-                    ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts 2>/dev/null || true
+stage('AI Release Notes') {
+    steps {
+        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+            sh '''
+            rm -f ~/.git-credentials
 
-                    echo "## Release Notes - $(date)" > release_notes.md
-                    echo "Changes deployed from latest Git commit:" >> release_notes.md
-                    git log -1 --pretty=format:"- %h - %s (%an)" >> release_notes.md
-                    cat release_notes.md
+            # Generate release notes
+            echo "Generating AI release notes..."
+            echo "Release Notes - $(date)" > release_notes.txt
+            echo "Changes deployed from latest Git commit:" >> release_notes.txt
+            git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
+            echo "AI Release Notes generated." >> release_notes.txt
+            cat release_notes.txt
 
-                    git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-                    git config user.email "ramana@ci.local"
-                    git config user.name "Jenkins CI"
+            # Configure Git
+            git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+            git config user.email "ramana@ci.local"
+            git config user.name "Jenkins CI"
 
-                    git fetch origin main
-                    git checkout main || git checkout -b main origin/main
-                    git pull origin main --rebase
+ 
+            git config --global credential.helper store
+            echo "https://ramana6365:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
 
-                    git add release_notes.md
-                    if ! git diff --cached --quiet; then
-                        git commit -m "docs: add AI-generated release notes [ci skip]" || true
-                        git push origin main
-                    else
-                        echo "No changes to commit."
-                    fi
-                    '''
-                }
-            }
+            # Commit & push
+            git add release_notes.txt
+            if ! git diff --cached --quiet; then
+                git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+            fi
+
+            git fetch origin main
+            git checkout main || git checkout -b main origin/main
+            git pull origin main --rebase
+            git push origin main
+            '''
         }
+    }
+}
+
+
 
         stage('Rollback') {
             steps {
-                sshagent(['my-ec2-key']) {
+                echo "Rolling back to previous stable version..."
+                sshagent (credentials: ['my-ec2-key']) {
                     sh """
-                    echo "Rolling back..."
                     ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
                         cd ${APP_PATH} &&
                         git reset --hard HEAD~1 &&
                         sudo systemctl restart ${SERVICE_NAME}'
                     """
                 }
+                echo "Rollback completed successfully."
             }
         }
     }
 
     post {
-        success { echo "Deployment pipeline completed successfully!" }
-        failure { echo "Build or deployment failed." }
+        success {
+            echo "Deployment pipeline completed successfully!"
+        }
+        failure {
+            echo "Build or deployment failed."
+        }
     }
 }

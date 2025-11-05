@@ -49,30 +49,28 @@ stage('AI Release Notes') {
             git config user.email "ramana@ci.local"
             git config user.name "Jenkins CI"
 
-
-            git remote set-url origin https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
-
+            git config credential.helper store
+            echo "https://ramana6365:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
 
             git add release_notes.txt
             if ! git diff --cached --quiet; then
-                git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+              git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
             fi
-
 
             current_branch=$(git rev-parse --abbrev-ref HEAD)
             if [ "$current_branch" != "main" ]; then
-                echo "Switching to main branch..."
-                git fetch origin main
-                git checkout main || git checkout -b main origin/main
+              echo "Switching to main branch..."
+              git fetch origin main
+              git checkout main || git checkout -b main origin/main
             fi
 
-
             git pull origin main --rebase
-            git push https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git main
+            git push origin main
             '''
         }
     }
 }
+
 
 
 

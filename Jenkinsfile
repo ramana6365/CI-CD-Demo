@@ -37,7 +37,6 @@ pipeline {
        stage('AI Release Notes') {
     steps {
         echo "Generating AI release notes..."
-
         sh '''
         # Generate release notes file
         echo "Release Notes - $(date)" > release_notes.txt
@@ -46,22 +45,19 @@ pipeline {
         echo "AI Release Notes generated." >> release_notes.txt
         cat release_notes.txt
 
-        # Ensure Git safe directory
+        # Git safe directory
         git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-
-        # Detect branch and switch if detached
-        branch=$(git rev-parse --abbrev-ref HEAD || echo "main")
-        if [ "$branch" = "HEAD" ]; then
-          echo "Switching from detached HEAD to main..."
-          git checkout main || git checkout -b main origin/main
-        fi
 
         # Configure user info
         git config user.email "ramana@ci.local"
         git config user.name "Jenkins CI"
 
-        # Use GitHub token for authentication
-        git remote set-url origin  https://github.com/ramana6365/CI-CD-Demo.git/ramana6365/CI-CD-Demo.git
+        # Fix the remote URL (no double repo path)
+        git remote set-url origin https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
+
+        # Create or checkout main safely
+        git fetch origin main
+        git checkout main || git checkout -b main origin/main
 
         # Commit and push changes if new content exists
         git add release_notes.txt
@@ -75,6 +71,7 @@ pipeline {
         '''
     }
 }
+
 
 
 

@@ -33,45 +33,43 @@ pipeline {
             }
         }
 
-stage('AI Release Notes') {
-    steps {
-        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-            sh '''
-            rm -f ~/.git-credentials
+        stage('AI Release Notes') {
+            steps {
+                sshagent(['my-ec2-key']) {
+                    sh '''
+                    set -e
+                    mkdir -p ~/.ssh
+                    ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts 2>/dev/null || true
 
-            # Generate release notes
-            echo "Generating AI release notes..."
-            echo "Release Notes - $(date)" > release_notes.txt
-            echo "Changes deployed from latest Git commit:" >> release_notes.txt
-            git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-            echo "AI Release Notes generated." >> release_notes.txt
-            cat release_notes.txt
+                    echo "Generating AI release notes..."
+                    echo "## Release Notes - $(date)" > release_notes.md
+                    echo "Changes deployed from latest Git commit:" >> release_notes.md
+                    git log -1 --pretty=format:"- %h - %s (%an)" >> release_notes.md
+                    echo "AI Release Notes generated." >> release_notes.md
+                    cat release_notes.md
 
-            # Configure Git
-            git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-            git config user.email "ramana@ci.local"
-            git config user.name "Jenkins CI"
+                    # Configure git
+                    git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+                    git config user.email "ramana@ci.local"
+                    git config user.name "Jenkins CI"
 
- 
-            git config --global credential.helper store
-            echo "https://ramana6365:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
+                    # Commit and push
+                    git fetch origin main
+                    git checkout main || git checkout -b main origin/main
+                    git pull origin main --rebase
 
-            # Commit & push
-            git add release_notes.txt
-            if ! git diff --cached --quiet; then
-                git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-            fi
-
-            git fetch origin main
-            git checkout main || git checkout -b main origin/main
-            git pull origin main --rebase
-            git push origin main
-            '''
+                    git add release_notes.md
+                    if ! git diff --cached --quiet; then
+                        git commit -m "docs: add AI-generated release notes [ci skip]" || true
+                        echo "Pushing release notes to GitHub via SSH..."
+                        git push origin main
+                    else
+                        echo "No changes to commit, skipping push."
+                    fi
+                    '''
+                }
+            }
         }
-    }
-}
-
-
 
         stage('Rollback') {
             steps {

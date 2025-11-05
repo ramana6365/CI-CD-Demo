@@ -1,8 +1,6 @@
 pipeline {
     agent any
-    options {
-        skipDefaultCheckout(true)       // prevent the default HTTPS checkout
-    }
+
 
     environment {
         EC2_IP       = "3.26.97.57"
@@ -11,14 +9,6 @@ pipeline {
     }
 
     stages {
-
-        stage('Checkout') {
-            steps {
-                sshagent(['github-ssh-key']) {        // <-- GitHub deploy key ID
-                    git branch: 'main', url: 'git@github.com:ramana6365/CI-CD-Demo.git'
-                }
-            }
-        }
 
         stage('Build') {
             steps {

@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    EC2_IP        = "3.26.97.57"
+    EC2_IP        = "15.134.81.110"
     APP_PATH      = "/home/ubuntu/CI-CD-Demo"
     SERVICE_NAME  = "sample-app.service"
   }
@@ -24,7 +24,7 @@ pipeline {
         echo "Deploying to EC2 (${EC2_IP})..."
         sshagent(['my-ec2-key1']) {
           sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 "
+            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
               cd /home/ubuntu/CI-CD-Demo &&
               git pull origin main &&
               sudo systemctl restart sample-app.service
@@ -64,7 +64,7 @@ pipeline {
         echo "Rolling back to previous stable version..."
         sshagent(['my-ec2-key1']) {
           sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 "
+            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
               cd /home/ubuntu/CI-CD-Demo &&
               git reset --hard HEAD~1 &&
               sudo systemctl restart sample-app.service

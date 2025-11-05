@@ -36,51 +36,41 @@ pipeline {
 
 stage('AI Release Notes') {
     steps {
-        echo "Generating AI release notes..."
         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
             sh '''
-            set -e
+            rm -f ~/.git-credentials
+
+            # Generate release notes
+            echo "Generating AI release notes..."
             echo "Release Notes - $(date)" > release_notes.txt
             echo "Changes deployed from latest Git commit:" >> release_notes.txt
             git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
             echo "AI Release Notes generated." >> release_notes.txt
             cat release_notes.txt
 
+            # Configure Git
             git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
             git config user.email "ramana@ci.local"
             git config user.name "Jenkins CI"
 
-
-            mkdir -p ~/.config/git
+ 
             git config --global credential.helper store
             echo "https://ramana6365:${GITHUB_TOKEN}@github.com" > ~/.git-credentials
 
+            # Commit & push
             git add release_notes.txt
             if ! git diff --cached --quiet; then
-                git commit -m "chore: add AI-generated release notes" || echo "No new changes to commit."
+                git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
             fi
 
-            current_branch=$(git rev-parse --abbrev-ref HEAD)
-            if [ "$current_branch" != "main" ]; then
-                echo "Switching to main branch..."
-                git fetch origin main
-                git checkout main || git checkout -b main origin/main
-            fi
-
+            git fetch origin main
+            git checkout main || git checkout -b main origin/main
             git pull origin main --rebase
-
-
-            GIT_CURL_VERBOSE=1 git push origin main
+            git push origin main
             '''
         }
     }
 }
-
-
-
-
-
-
 
 
 

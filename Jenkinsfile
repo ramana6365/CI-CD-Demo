@@ -61,7 +61,7 @@ pipeline {
         git config user.name "Jenkins CI"
 
         # Use GitHub token for authentication
-        git remote set-url origin https://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@github.com/ramana6365/CI-CD-Demo.git
+        git remote set-url origin  https://github.com/ramana6365/CI-CD-Demo.git/ramana6365/CI-CD-Demo.git
 
         # Commit and push changes if new content exists
         git add release_notes.txt

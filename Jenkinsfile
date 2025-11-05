@@ -5,7 +5,6 @@ pipeline {
         EC2_IP = "3.26.97.57"
         APP_PATH = "/home/ubuntu/CI-CD-Demo"
         SERVICE_NAME = "sample-app.service"
-        GITHUB_TOKEN = "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"
     }
 
     stages {

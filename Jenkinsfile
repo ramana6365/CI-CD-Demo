@@ -34,7 +34,7 @@ pipeline {
             }
         }
 
-       stage('AI Release Notes') {
+stage('AI Release Notes') {
     steps {
         echo "Generating AI release notes..."
         sh '''
@@ -47,30 +47,33 @@ pipeline {
 
         # Git safe directory
         git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-
-        # Configure user info
         git config user.email "ramana@ci.local"
         git config user.name "Jenkins CI"
 
-        # Fix the remote URL (no double repo path)
+        # Authenticate remote properly
         git remote set-url origin https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
 
-        # Create or checkout main safely
-        git fetch origin main
-        git checkout main || git checkout -b main origin/main
-
-        # Commit and push changes if new content exists
+        # Commit first (before switching branch)
         git add release_notes.txt
         if ! git diff --cached --quiet; then
           git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-          git pull origin main --rebase
-          git push origin main
-        else
-          echo "No new release notes to commit."
         fi
+
+        # Ensure we're on main branch
+        current_branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$current_branch" != "main" ]; then
+          echo "Switching to main branch..."
+          git fetch origin main
+          git checkout main || git checkout -b main origin/main
+        fi
+
+        # Rebase and push
+        git pull origin main --rebase
+        git push origin main
         '''
     }
 }
+
 
 
 

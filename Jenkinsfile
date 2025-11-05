@@ -40,23 +40,24 @@ stage('AI Release Notes') {
     sshagent(['github-deploy-key']) {
       sh '''
         set -e
-        echo " Generating AI-powered release notes..."
+        echo "Generating AI-powered release notes..."
 
         git log -3 --pretty=format:"%h - %s (%an)" > commits.txt
+        COMMITS=$(cat commits.txt | jq -Rs .)
 
         echo "Calling OpenAI API..."
         API_RESPONSE=$(curl -s https://api.openai.com/v1/chat/completions \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $OPENAI_API_KEY" \
-          -d '{
-            "model": "gpt-4o-mini",
-            "messages": [
-              {"role": "system", "content": "You are a professional release note writer."},
-              {"role": "user", "content": "Write concise release notes for these commits:\\n'"$(cat commits.txt)"'"}
+          -d "{
+            \\"model\\": \\"gpt-4o-mini\\",
+            \\"messages\\": [
+              {\\"role\\": \\"system\\", \\"content\\": \\"You are a professional release note writer.\\"},
+              {\\"role\\": \\"user\\", \\"content\\": \\"Write concise release notes for these commits:\\n${COMMITS}\\"}
             ]
-          }')
+          }")
 
-        echo "$API_RESPONSE" | jq . > api_raw.json   # for debugging
+        echo "$API_RESPONSE" | jq . > api_raw.json
         AI_NOTES=$(echo "$API_RESPONSE" | jq -r '.choices[0].message.content // .error.message')
 
         echo "## AI Release Notes - $(date)" > release_notes.md
@@ -69,17 +70,15 @@ stage('AI Release Notes') {
 
         git fetch origin main
         git checkout main || git checkout -b main origin/main
-
-        # Always stage & commit before pulling to avoid rebase conflict
         git add release_notes.md
         git commit -m "docs: add AI-generated release notes [ci skip]" || true
-
         git pull origin main --rebase || git stash && git pull origin main --rebase && git stash pop || true
         git push origin main
       '''
     }
   }
 }
+
 
 
     stage('Rollback') {

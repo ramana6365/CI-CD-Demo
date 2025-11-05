@@ -2,9 +2,9 @@ pipeline {
   agent any
 
   environment {
-    EC2_IP = "3.26.97.57"
-    APP_PATH = "/home/ubuntu/CI-CD-Demo"
-    SERVICE_NAME = "sample-app.service"
+    EC2_IP        = "3.26.97.57"
+    APP_PATH      = "/home/ubuntu/CI-CD-Demo"
+    SERVICE_NAME  = "sample-app.service"
   }
 
   stages {

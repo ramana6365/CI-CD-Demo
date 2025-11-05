@@ -22,7 +22,7 @@ pipeline {
     stage('Deploy to EC2') {
       steps {
         echo "Deploying to EC2 (${EC2_IP})..."
-        sshagent(['my-ec2-key1']) {
+        sshagent(['my-ec2-key']) {
           sh '''
             ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
               cd /home/ubuntu/CI-CD-Demo &&
@@ -62,7 +62,7 @@ pipeline {
     stage('Rollback') {
       steps {
         echo "Rolling back to previous stable version..."
-        sshagent(['my-ec2-key1']) {
+        sshagent(['my-ec2-key']) {
           sh '''
             ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110"
               cd /home/ubuntu/CI-CD-Demo &&

@@ -36,43 +36,40 @@ pipeline {
 
 stage('AI Release Notes') {
     steps {
-        echo "Generating AI release notes..."
-        sh '''
-        # Generate release notes file
-        echo "Release Notes - $(date)" > release_notes.txt
-        echo "Changes deployed from latest Git commit:" >> release_notes.txt
-        git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-        echo "AI Release Notes generated." >> release_notes.txt
-        cat release_notes.txt
+        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+            sh '''
+            echo "Generating AI release notes..."
+            echo "Release Notes - $(date)" > release_notes.txt
+            echo "Changes deployed from latest Git commit:" >> release_notes.txt
+            git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
+            echo "AI Release Notes generated." >> release_notes.txt
+            cat release_notes.txt
 
-        # Git safe directory
-        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-        git config user.email "ramana@ci.local"
-        git config user.name "Jenkins CI"
+            git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+            git config user.email "ramana@ci.local"
+            git config user.name "Jenkins CI"
 
-        # Authenticate remote properly
-        git remote set-url origin https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
+            git remote set-url origin https://ramana6365:${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
 
-        # Commit first (before switching branch)
-        git add release_notes.txt
-        if ! git diff --cached --quiet; then
-          git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-        fi
+            git add release_notes.txt
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+            fi
 
-        # Ensure we're on main branch
-        current_branch=$(git rev-parse --abbrev-ref HEAD)
-        if [ "$current_branch" != "main" ]; then
-          echo "Switching to main branch..."
-          git fetch origin main
-          git checkout main || git checkout -b main origin/main
-        fi
+            current_branch=$(git rev-parse --abbrev-ref HEAD)
+            if [ "$current_branch" != "main" ]; then
+              echo "Switching to main branch..."
+              git fetch origin main
+              git checkout main || git checkout -b main origin/main
+            fi
 
-        # Rebase and push
-        git pull origin main --rebase
-        git push origin main
-        '''
+            git pull origin main --rebase
+            git push origin main
+            '''
+        }
     }
 }
+
 
 
 

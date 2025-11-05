@@ -33,7 +33,6 @@ pipeline {
         git log -3 --pretty=format:"%h - %s (%an)" > commits.txt
         COMMITS=$(cat commits.txt | jq -Rs .)
 
-        #Correct jq syntax 
         jq -n --arg commits "$COMMITS" '{
           model: "gpt-4o-mini",
           messages: [
@@ -61,7 +60,12 @@ pipeline {
 
         git fetch origin main
         git checkout main
+
+        # Fix: prevent rebase conflict
+        git stash || true
         git pull origin main --rebase
+        git stash pop || true
+
         git add release_notes.md api_raw.json api_raw_pretty.json
         git commit -m "docs: add AI-generated release notes + raw response [ci skip]" || true
         git push origin main
@@ -69,7 +73,6 @@ pipeline {
     }
   }
 }
-
 
 
 

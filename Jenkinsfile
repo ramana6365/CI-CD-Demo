@@ -8,6 +8,15 @@ pipeline {
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                sshagent(['my-ec2-key']) {
+                    git branch: 'main', url: 'git@github.com:ramana6365/CI-CD-Demo.git'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 echo "Building the Node.js app..."
@@ -53,11 +62,12 @@ pipeline {
                     git config user.email "ramana@ci.local"
                     git config user.name "Jenkins CI"
 
-                    # Commit and push
+                    # Checkout main branch before commit
                     git fetch origin main
                     git checkout main || git checkout -b main origin/main
                     git pull origin main --rebase
 
+                    # Commit and push release notes
                     git add release_notes.md
                     if ! git diff --cached --quiet; then
                         git commit -m "docs: add AI-generated release notes [ci skip]" || true

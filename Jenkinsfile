@@ -5,6 +5,7 @@ pipeline {
         EC2_IP = "3.26.97.57"
         APP_PATH = "/home/ubuntu/CI-CD-Demo"
         SERVICE_NAME = "sample-app.service"
+        GITHUB_TOKEN = "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"
     }
 
     stages {
@@ -23,50 +24,54 @@ pipeline {
                 echo "Deploying to EC2 (${EC2_IP})..."
                 sshagent (credentials: ['my-ec2-key']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 '
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 "
                         cd /home/ubuntu/CI-CD-Demo &&
                         git pull origin main &&
                         sudo systemctl restart sample-app.service
-                    '
+                    "
                     '''
                 }
             }
         }
 
         stage('AI Release Notes') {
-    steps {
-        echo "Generating AI release notes..."
+            steps {
+                echo "Generating AI release notes..."
 
-        sh '''
-        echo "Release Notes - $(date)" > release_notes.txt
-        echo "Changes deployed from latest Git commit:" >> release_notes.txt
-        git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-        echo "AI Release Notes generated." >> release_notes.txt
-        cat release_notes.txt
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                    echo "Release Notes - $(date)" > release_notes.txt
+                    echo "Changes deployed from latest Git commit:" >> release_notes.txt
+                    git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
+                    echo "AI Release Notes generated." >> release_notes.txt
+                    cat release_notes.txt
 
-        # Identify current branch (use main as fallback)
-        branch=$(git rev-parse --abbrev-ref HEAD || echo "main")
+                    # Identify current branch (use main as fallback)
+                    branch=$(git rev-parse --abbrev-ref HEAD || echo "main")
 
-        # If detached, switch to main
-        if [ "$branch" = "HEAD" ]; then
-          echo "Switching from detached HEAD to main branch..."
-          git checkout main || git checkout -b main origin/main
-        fi
+                    # If detached, switch to main
+                    if [ "$branch" = "HEAD" ]; then
+                      echo "Switching from detached HEAD to main branch..."
+                      git checkout main || git checkout -b main origin/main
+                    fi
 
-        git config --global user.email "ramana@ci.local"
-        git config --global user.name "Jenkins CI"
+                    git config --global user.email "ramana@ci.local"
+                    git config --global user.name "Jenkins CI"
 
-        git add release_notes.txt
-        if ! git diff --cached --quiet; then
-          git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-          git push origin main
-        else
-          echo "No changes detected in release notes."
-        fi
-        '''
-    }
-}
+                    # Use token for HTTPS authentication
+                    git remote set-url origin https://${GITHUB_TOKEN}@github.com/ramana6365/CI-CD-Demo.git
 
+                    git add release_notes.txt
+                    if ! git diff --cached --quiet; then
+                      git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+                      git push origin main
+                    else
+                      echo "No changes detected in release notes."
+                    fi
+                    '''
+                }
+            }
+        }
 
         stage('Rollback') {
             steps {

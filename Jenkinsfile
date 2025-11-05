@@ -9,15 +9,6 @@ pipeline {
 
   stages {
 
-    stage('Checkout') {
-      steps {
-        echo "Checking out code via SSH..."
-        sshagent(['github-deploy-key']) {
-          git branch: 'main', url: 'git@github.com:ramana6365/CI-CD-Demo.git'
-        }
-      }
-    }
-
     stage('Build') {
       steps {
         echo "Building the Node.js app..."

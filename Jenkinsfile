@@ -19,46 +19,44 @@ pipeline {
         }
 
         stage('Deploy to EC2') {
-    steps {
-        echo "Deploying to EC2 (3.26.97.57)..."
-        sshagent (credentials: ['my-ec2-key']) {
-            sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 '
-                cd /home/ubuntu/CI-CD-Demo &&
-                git pull origin main &&
-                sudo systemctl restart sample-app.service
-            '
-            '''
+            steps {
+                echo "Deploying to EC2 (${EC2_IP})..."
+                sshagent (credentials: ['my-ec2-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@3.26.97.57 '
+                        cd /home/ubuntu/CI-CD-Demo &&
+                        git pull origin main &&
+                        sudo systemctl restart sample-app.service
+                    '
+                    '''
+                }
+            }
         }
-    }
-}
 
-       stage('AI Release Notes') {
-    steps {
-        echo "Generating AI release notes..."
+        stage('AI Release Notes') {
+            steps {
+                echo "Generating AI release notes..."
 
-        sh '''
-        echo "Release Notes - $(date)" > release_notes.txt
-        echo "Changes deployed from latest Git commit:" >> release_notes.txt
-        git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-        echo "AI Release Notes generated." >> release_notes.txt
-        cat release_notes.txt
+                sh '''
+                echo "Release Notes - $(date)" > release_notes.txt
+                echo "Changes deployed from latest Git commit:" >> release_notes.txt
+                git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
+                echo "AI Release Notes generated." >> release_notes.txt
+                cat release_notes.txt
 
-        git config --global user.email "ramana@ci.local"
-        git config --global user.name "Jenkins CI"
+                git config --global user.email "ramana@ci.local"
+                git config --global user.name "Jenkins CI"
 
-        git add release_notes.txt
-        if ! git diff --cached --quiet; then
-          git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
-          git push
-        else
-          echo "No changes detected in release notes."
-        fi
-        '''
-    }
-}
-
-}
+                git add release_notes.txt
+                if ! git diff --cached --quiet; then
+                  git commit -m "chore: add AI-generated release notes [ci skip]" || echo "No new changes to commit."
+                  git push
+                else
+                  echo "No changes detected in release notes."
+                fi
+                '''
+            }
+        }
 
         stage('Rollback') {
             steps {
@@ -66,9 +64,9 @@ pipeline {
                 sshagent (credentials: ['my-ec2-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
-                    cd ${APP_PATH} &&
-                    git reset --hard HEAD~1 &&
-                    sudo systemctl restart ${SERVICE_NAME}'
+                        cd ${APP_PATH} &&
+                        git reset --hard HEAD~1 &&
+                        sudo systemctl restart ${SERVICE_NAME}'
                     """
                 }
                 echo "Rollback completed successfully."

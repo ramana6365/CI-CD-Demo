@@ -13,7 +13,7 @@ pipeline {
                 echo "Building the Node.js app..."
                 sh '''
                 npm install
-                echo "✅ Build completed successfully."
+                echo "Build completed successfully."
                 '''
             }
         }
@@ -35,12 +35,12 @@ pipeline {
 
         stage('AI Release Notes') {
             steps {
-                echo "🧠 Generating AI-based release notes..."
+                echo "Generating AI-based release notes..."
                 sh '''
                 echo "Release Notes - $(date)" > release_notes.txt
                 echo "Changes deployed from latest Git commit:" >> release_notes.txt
                 git log -1 --pretty=format:"%h - %s (%an)" >> release_notes.txt
-                echo "✅ AI Release Notes generated."
+                echo "AI Release Notes generated."
                 cat release_notes.txt
                 '''
             }
@@ -48,7 +48,7 @@ pipeline {
 
         stage('Rollback') {
             steps {
-                echo "⏪ Rolling back to previous stable version..."
+                echo "Rolling back to previous stable version..."
                 sshagent (credentials: ['my-ec2-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
@@ -57,17 +57,17 @@ pipeline {
                     sudo systemctl restart ${SERVICE_NAME}'
                     """
                 }
-                echo "✅ Rollback completed successfully."
+                echo "Rollback completed successfully."
             }
         }
     }
 
     post {
         success {
-            echo "🎉 Deployment pipeline completed successfully!"
+            echo "Deployment pipeline completed successfully!"
         }
         failure {
-            echo "❌ Build or deployment failed. Check logs for details."
+            echo "Build or deployment failed."
         }
     }
 }

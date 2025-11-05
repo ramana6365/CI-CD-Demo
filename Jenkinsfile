@@ -79,22 +79,51 @@ pipeline {
 
     
 
-    stage('Rollback') {
-      steps {
-        echo "Rolling back to previous stable version..."
-        sshagent(['my-ec2-key']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110 "
-              cd /home/ubuntu/CI-CD-Demo &&
-              git reset --hard HEAD~1 &&
-              sudo systemctl restart sample-app.service
-            "
-          '''
-        }
-        echo "Rollback completed successfully."
+stage('Rollback Suggestion') {
+  when {
+    expression { currentBuild.currentResult == 'FAILURE' || currentBuild.currentResult == 'UNSTABLE' }
+  }
+  steps {
+    script {
+      echo "Build failed or unstable — generating rollback suggestion..."
+
+      // Get last successful build info
+      def lastGoodBuild = currentBuild.rawBuild.getPreviousSuccessfulBuild()
+      if (lastGoodBuild) {
+        def rollbackCommit = sh(returnStdout: true, script: "git rev-parse ${lastGoodBuild.displayName} || true").trim()
+        echo "Last successful build: #${lastGoodBuild.number}"
+        echo "Rollback candidate commit: ${rollbackCommit}"
+
+        // Write rollback suggestion to file
+        sh """
+          echo "## Rollback Suggestion - $(date)" > rollback_suggestion.md
+          echo "The current build (${env.BUILD_NUMBER}) failed or is unstable." >> rollback_suggestion.md
+          echo "Suggested rollback target: Build #${lastGoodBuild.number}" >> rollback_suggestion.md
+          echo "Commit ID: ${rollbackCommit}" >> rollback_suggestion.md
+          echo "" >> rollback_suggestion.md
+          echo "To rollback, run:" >> rollback_suggestion.md
+          echo "\\n  git checkout ${rollbackCommit}" >> rollback_suggestion.md
+          echo "\\n  git push origin main --force" >> rollback_suggestion.md
+        """
+
+        // Display and commit rollback suggestion
+        sh "cat rollback_suggestion.md"
+
+        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+        sh '''
+          git config user.email "ramana@ci.local"
+          git config user.name "Jenkins CI"
+          git add rollback_suggestion.md
+          git commit -m "docs: add rollback suggestion for failed build [ci skip]" || true
+          git push origin main || true
+        '''
+      } else {
+        echo "No previous successful build found — cannot generate rollback suggestion."
       }
     }
   }
+}
+
 
   post {
     success {

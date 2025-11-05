@@ -34,30 +34,35 @@ pipeline {
       }
     }
 
-    stage('AI Release Notes') {
-      steps {
-        sshagent(['github-deploy-key']) {
-          sh '''
-            set -e
-            echo "Generating AI release notes..."
-            echo "## Release Notes - $(date)" > release_notes.md
-            echo "Changes deployed from latest Git commit:" >> release_notes.md
-            git log -1 --pretty=format:"- %h - %s (%an)" >> release_notes.md
-            echo "AI Release Notes generated." >> release_notes.md
-            cat release_notes.md
+stage('AI Release Notes') {
+  steps {
+    sshagent(['github-deploy-key']) {
+      sh '''
+        set -e
+        echo "Generating AI release notes..."
+        echo "## Release Notes - $(date)" > release_notes.md
+        echo "Changes deployed from latest Git commit:" >> release_notes.md
+        git log -1 --pretty=format:"- %h - %s (%an)" >> release_notes.md
+        echo "AI Release Notes generated." >> release_notes.md
+        cat release_notes.md
 
-            git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
-            git config user.email "ramana@ci.local"
-            git config user.name "Jenkins CI"
+        git config --global --add safe.directory /var/lib/jenkins/workspace/ci_cd
+        git config user.email "ramana@ci.local"
+        git config user.name "Jenkins CI"
 
-            git add release_notes.md
-            git commit -m "docs: add AI-generated release notes [ci skip]" || true
-            git pull origin main --rebase
-            git push origin main
-          '''
-        }
-      }
+        # Ensure we are on main branch
+        git fetch origin main
+        git checkout main || git checkout -b main origin/main
+        git pull origin main --rebase
+
+        git add release_notes.md
+        git commit -m "docs: add AI-generated release notes [ci skip]" || true
+        git push origin main
+      '''
     }
+  }
+}
+
 
     stage('Rollback') {
       steps {

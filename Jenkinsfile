@@ -19,22 +19,7 @@ pipeline {
       }
     }
 
-    stage('Deploy to EC2') {
-      steps {
-        echo "Deploying to EC2 (${EC2_IP})..."
-        sshagent(['my-ec2-key']) {
-          sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@15.134.81.110 "
-              cd /home/ubuntu/CI-CD-Demo &&
-              git pull origin main &&
-              sudo systemctl restart sample-app.service
-            "
-          '''
-        }
-      }
-    }
-
-
+    
   stage('AI Release Notes') {
   environment {
     OPENAI_KEY = credentials('OPENAI_API_KEY')

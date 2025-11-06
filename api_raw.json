@@ -1,14 +1,14 @@
 {
-  "id": "chatcmpl-CYduxsYy6K1DkxpTFgC4gRRTWX1Xz",
+  "id": "chatcmpl-CYmx0kV9ub85uLquT424zSviB9EzE",
   "object": "chat.completion",
-  "created": 1762372631,
+  "created": 1762407354,
   "model": "gpt-4o-mini-2024-07-18",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "### Release Notes\n\n#### Features\n- **AI-Generated Release Notes**: Added functionality for generating release notes automatically based on commit messages. This feature has been implemented across several recent commits to streamline documentation.\n  \n#### Improvements\n- **Rollback Suggestion Logic**: Introduced rollback suggestion logic to enhance recovery options in case of issues with new changes. This improvement aims to provide more robust support for maintaining application stability.\n\n---\n\nThese enhancements were contributed by Ramana6365 and aim to improve the efficiency of release documentation and change management processes.",
+        "content": "### Release Notes\n\n**New Features:**\n\n- **AI-Generated Release Notes**: We now have automatic AI-generated release notes that capture important changes based on commit messages. This feature aims to streamline the documentation process, ensuring clarity and consistency.\n  \n- **Rollback Suggestion Logic**: An intelligent rollback suggestion mechanism has been implemented. This feature provides recommendations for reverting changes if needed, enhancing the overall management of releases.\n\n**Other Changes:**\n\n- Improved handling of commit message parsing for better accuracy in generated notes. \n\nThese enhancements mark a significant step toward more efficient release management within our development workflow.",
         "refusal": null,
         "annotations": []
       },
@@ -17,9 +17,9 @@
     }
   ],
   "usage": {
-    "prompt_tokens": 130,
-    "completion_tokens": 107,
-    "total_tokens": 237,
+    "prompt_tokens": 121,
+    "completion_tokens": 120,
+    "total_tokens": 241,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
